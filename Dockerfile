@@ -1,13 +1,12 @@
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
-COPY app/mvnw .
-COPY app/.mvn .mvn
-COPY app/pom.xml .
-COPY app/src src
-RUN chmod +x mvnw
-RUN ./mvnw package -DskipTests
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+COPY src ./src
+RUN ./mvnw package -DskipTests -B
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
