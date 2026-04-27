@@ -13,6 +13,9 @@ public class DatabaseConfig {
     public DataSource dataSource() {
         String databaseUrl = System.getenv("DATABASE_URL");
         
+        System.out.println("=== DATABASE CONFIGURATION DEBUG ===");
+        System.out.println("DATABASE_URL: " + (databaseUrl != null ? "EXISTS" : "NULL"));
+        
         // Try to use Railway's DATABASE_URL if available
         if (databaseUrl != null && !databaseUrl.isEmpty()) {
             try {
@@ -25,6 +28,9 @@ public class DatabaseConfig {
                     jdbcUrl += (jdbcUrl.contains("?") ? "&" : "?") + "sslmode=require";
                 }
                 
+                System.out.println("Using DATABASE_URL (converted to JDBC format)");
+                System.out.println("JDBC URL: " + jdbcUrl.replaceAll(":[^:@]+@", ":****@")); // Hide password
+                
                 return DataSourceBuilder
                         .create()
                         .url(jdbcUrl)
@@ -32,6 +38,7 @@ public class DatabaseConfig {
                         .build();
             } catch (Exception e) {
                 System.err.println("Failed to parse DATABASE_URL: " + e.getMessage());
+                e.printStackTrace();
                 // Fall through to individual variables
             }
         }
@@ -43,6 +50,12 @@ public class DatabaseConfig {
         String pgUser = System.getenv("PGUSER");
         String pgPassword = System.getenv("PGPASSWORD");
         
+        System.out.println("PGHOST: " + (pgHost != null ? pgHost : "NULL"));
+        System.out.println("PGPORT: " + (pgPort != null ? pgPort : "NULL"));
+        System.out.println("PGDATABASE: " + (pgDatabase != null ? pgDatabase : "NULL"));
+        System.out.println("PGUSER: " + (pgUser != null ? pgUser : "NULL"));
+        System.out.println("PGPASSWORD: " + (pgPassword != null ? "EXISTS" : "NULL"));
+        
         if (pgHost != null && pgDatabase != null) {
             String jdbcUrl = String.format(
                 "jdbc:postgresql://%s:%s/%s?sslmode=require",
@@ -50,6 +63,9 @@ public class DatabaseConfig {
                 pgPort != null ? pgPort : "5432",
                 pgDatabase
             );
+            
+            System.out.println("Using individual PG variables");
+            System.out.println("JDBC URL: " + jdbcUrl);
             
             return DataSourceBuilder
                     .create()
@@ -61,6 +77,7 @@ public class DatabaseConfig {
         }
         
         // Fallback to default configuration for local development
+        System.out.println("Using fallback local configuration");
         return DataSourceBuilder
                 .create()
                 .url("jdbc:postgresql://localhost:5432/room_monitoring")
