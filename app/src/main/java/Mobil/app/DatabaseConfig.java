@@ -5,8 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 @Configuration
 public class DatabaseConfig {
@@ -15,24 +13,51 @@ public class DatabaseConfig {
     public DataSource dataSource() {
         String databaseUrl = System.getenv("DATABASE_URL");
         
-        if (databaseUrl != null && databaseUrl.startsWith("postgresql://")) {
+        // Try to use Railway's DATABASE_URL if available
+        if (databaseUrl != null && !databaseUrl.isEmpty()) {
             try {
-                URI dbUri = new URI(databaseUrl);
+                // Railway format: postgresql://user:password@host:port/database
+                // Convert to JDBC format: jdbc:postgresql://host:port/database
+                String jdbcUrl = databaseUrl.replace("postgresql://", "jdbc:postgresql://");
                 
-                String username = dbUri.getUserInfo().split(":")[0];
-                String password = dbUri.getUserInfo().split(":")[1];
-                String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ':' + dbUri.getPort() + dbUri.getPath() + "?sslmode=require";
+                // Add SSL mode if not already present
+                if (!jdbcUrl.contains("sslmode=")) {
+                    jdbcUrl += (jdbcUrl.contains("?") ? "&" : "?") + "sslmode=require";
+                }
                 
                 return DataSourceBuilder
                         .create()
                         .url(jdbcUrl)
-                        .username(username)
-                        .password(password)
                         .driverClassName("org.postgresql.Driver")
                         .build();
-            } catch (URISyntaxException e) {
-                throw new RuntimeException("Invalid DATABASE_URL format", e);
+            } catch (Exception e) {
+                System.err.println("Failed to parse DATABASE_URL: " + e.getMessage());
+                // Fall through to individual variables
             }
+        }
+        
+        // Try Railway's individual environment variables
+        String pgHost = System.getenv("PGHOST");
+        String pgPort = System.getenv("PGPORT");
+        String pgDatabase = System.getenv("PGDATABASE");
+        String pgUser = System.getenv("PGUSER");
+        String pgPassword = System.getenv("PGPASSWORD");
+        
+        if (pgHost != null && pgDatabase != null) {
+            String jdbcUrl = String.format(
+                "jdbc:postgresql://%s:%s/%s?sslmode=require",
+                pgHost,
+                pgPort != null ? pgPort : "5432",
+                pgDatabase
+            );
+            
+            return DataSourceBuilder
+                    .create()
+                    .url(jdbcUrl)
+                    .username(pgUser != null ? pgUser : "postgres")
+                    .password(pgPassword != null ? pgPassword : "postgres")
+                    .driverClassName("org.postgresql.Driver")
+                    .build();
         }
         
         // Fallback to default configuration for local development
