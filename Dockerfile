@@ -1,15 +1,21 @@
 FROM eclipse-temurin:21-jdk AS build
-WORKDIR /app
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
+WORKDIR /workspace
+
+# Copy app directory contents
+COPY app/.mvn/ .mvn/
+COPY app/mvnw app/pom.xml ./
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
-COPY src ./src
+
+# Copy source code
+COPY app/src ./src
 RUN ./mvnw package -DskipTests -B
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY --from=build /workspace/target/*.jar app.jar
 
-# deploy
+# Expose port
+EXPOSE 8080
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]
