@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import 'rooms_screen.dart';
 import 'tasks_screen.dart';
 import 'inventory_screen.dart';
+import 'profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,6 +20,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     RoomsScreen(),
     TasksScreen(),
     InventoryScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -31,20 +33,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.white24,
-                  child: Text(
-                    auth.username?.substring(0, 1).toUpperCase() ?? 'U',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () => _confirmLogout(context),
-                ),
-              ],
+            child: CircleAvatar(
+              backgroundColor: Colors.white24,
+              child: Text(
+                auth.username?.substring(0, 1).toUpperCase() ?? 'U',
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ),
         ],
@@ -56,32 +50,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.hotel), label: 'Xonalar'),
           NavigationDestination(icon: Icon(Icons.task_alt), label: 'Vazifalar'),
-          NavigationDestination(
-              icon: Icon(Icons.inventory), label: 'Buyumlar'),
-        ],
-      ),
-    );
-  }
-
-  void _confirmLogout(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Chiqish'),
-        content: const Text('Tizimdan chiqmoqchimisiz?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Bekor')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<AuthProvider>().logout();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child:
-                const Text('Chiqish', style: TextStyle(color: Colors.white)),
-          ),
+          NavigationDestination(icon: Icon(Icons.inventory), label: 'Buyumlar'),
+          NavigationDestination(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );
