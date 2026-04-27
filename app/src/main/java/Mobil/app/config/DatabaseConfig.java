@@ -13,6 +13,39 @@ public class DatabaseConfig {
     public DataSource dataSource() {
         System.out.println("=== DATABASE CONFIGURATION DEBUG ===");
         
+        // Try custom DB_ variables first (manually configured public endpoint)
+        String dbHost = System.getenv("DB_HOST");
+        String dbPort = System.getenv("DB_PORT");
+        String dbName = System.getenv("DB_NAME");
+        String dbUser = System.getenv("DB_USER");
+        String dbPassword = System.getenv("DB_PASSWORD");
+        
+        System.out.println("DB_HOST: " + (dbHost != null ? dbHost : "NULL"));
+        System.out.println("DB_PORT: " + (dbPort != null ? dbPort : "NULL"));
+        System.out.println("DB_NAME: " + (dbName != null ? dbName : "NULL"));
+        System.out.println("DB_USER: " + (dbUser != null ? dbUser : "NULL"));
+        System.out.println("DB_PASSWORD: " + (dbPassword != null ? "EXISTS" : "NULL"));
+        
+        if (dbHost != null && dbName != null && dbUser != null && dbPassword != null) {
+            String jdbcUrl = String.format(
+                "jdbc:postgresql://%s:%s/%s",
+                dbHost,
+                dbPort != null ? dbPort : "5432",
+                dbName
+            );
+            
+            System.out.println("✅ Using custom DB_ environment variables (public endpoint)");
+            System.out.println("   JDBC URL: " + jdbcUrl);
+            
+            return DataSourceBuilder
+                    .create()
+                    .url(jdbcUrl)
+                    .username(dbUser)
+                    .password(dbPassword)
+                    .driverClassName("org.postgresql.Driver")
+                    .build();
+        }
+        
         // Log all database-related environment variables
         String databaseUrl = System.getenv("DATABASE_URL");
         String publicUrl = System.getenv("DATABASE_PUBLIC_URL");
