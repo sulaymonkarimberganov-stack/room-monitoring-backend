@@ -13,6 +13,35 @@ public class DatabaseConfig {
     public DataSource dataSource() {
         System.out.println("=== DATABASE CONFIGURATION DEBUG ===");
         
+        // TEMPORARY: Hardcoded public endpoint for testing
+        // TODO: Move to environment variables after testing
+        String hardcodedHost = "shuttle.proxy.rlwy.net";
+        String hardcodedPort = "49209";
+        String hardcodedDatabase = "railway";
+        String hardcodedUser = "postgres";
+        String hardcodedPassword = System.getenv("PGPASSWORD"); // Still use env for password
+        
+        if (hardcodedPassword != null && !hardcodedPassword.isEmpty()) {
+            String jdbcUrl = String.format(
+                "jdbc:postgresql://%s:%s/%s",
+                hardcodedHost,
+                hardcodedPort,
+                hardcodedDatabase
+            );
+            
+            System.out.println("✅ Using HARDCODED public endpoint (temporary for testing)");
+            System.out.println("   JDBC URL: " + jdbcUrl);
+            System.out.println("   User: " + hardcodedUser);
+            
+            return DataSourceBuilder
+                    .create()
+                    .url(jdbcUrl)
+                    .username(hardcodedUser)
+                    .password(hardcodedPassword)
+                    .driverClassName("org.postgresql.Driver")
+                    .build();
+        }
+        
         // Try custom DB_ variables first (manually configured public endpoint)
         String dbHost = System.getenv("DB_HOST");
         String dbPort = System.getenv("DB_PORT");
@@ -117,7 +146,7 @@ public class DatabaseConfig {
                     .create()
                     .url(jdbcUrl)
                     .username(pgUser != null ? pgUser : "postgres")
-                    .password(pgPassword != null ? pgPassword : "postgres")
+                    .password(hardcodedPassword != null ? hardcodedPassword : "postgres")
                     .driverClassName("org.postgresql.Driver")
                     .build();
         }
