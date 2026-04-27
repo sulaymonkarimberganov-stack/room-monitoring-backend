@@ -43,13 +43,32 @@ public class DatabaseConfig {
                     .build();
         }
         
-        // Fallback to individual environment variables
-        String pgHost = System.getenv("PGHOST");
-        String pgPort = System.getenv("PGPORT");
-        String pgDatabase = System.getenv("PGDATABASE");
-        String pgUser = System.getenv("PGUSER");
-        String pgPassword = System.getenv("PGPASSWORD");
+        // Try DATABASE_URL (convert internal to work with JDBC)
+        if (databaseUrl != null && !databaseUrl.isEmpty()) {
+            try {
+                // Convert postgresql:// to jdbc:postgresql://
+                String jdbcUrl = databaseUrl.startsWith("jdbc:") ? databaseUrl : "jdbc:" + databaseUrl;
+                
+                // Replace internal hostname with proxy if needed
+                if (jdbcUrl.contains(".railway.internal")) {
+                    System.out.println("⚠️  DATABASE_URL contains internal hostname, this may not work");
+                    System.out.println("   Consider using DATABASE_PUBLIC_URL or external connection details");
+                }
+                
+                System.out.println("✅ Using DATABASE_URL");
+                System.out.println("   URL: " + jdbcUrl.replaceAll(":[^:@]+@", ":****@"));
+                
+                return DataSourceBuilder
+                        .create()
+                        .url(jdbcUrl)
+                        .driverClassName("org.postgresql.Driver")
+                        .build();
+            } catch (Exception e) {
+                System.err.println("❌ Failed to use DATABASE_URL: " + e.getMessage());
+            }
+        }
         
+        // Fallback to individual environment variables
         if (pgHost != null && pgDatabase != null) {
             String jdbcUrl = String.format(
                 "jdbc:postgresql://%s:%s/%s",
