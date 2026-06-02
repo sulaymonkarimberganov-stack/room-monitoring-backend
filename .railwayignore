@@ -1,0 +1,29 @@
+# Railway Ignore File
+# Railway'ga deploy qilishda bu fayllar ignore qilinadi
+
+# Flutter Mobile App (backend uchun kerak emas)
+mobile/
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Specs
+.kiro/
+
+# Build artifacts (qayta build qilinadi)
+app/target/
+.mvn/
+
+# Test files
+app/src/test/

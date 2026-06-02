@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["...", "maven", "jdk21"]
+
+[phases.build]
+cmds = [
+  "cd app",
+  "mvn clean package -DskipTests"
+]
+
+[phases.start]
+cmd = "java -jar app/target/app-0.0.1-SNAPSHOT.jar"
+
+[variables]
+MAVEN_OPTS = "-Xmx512m"
