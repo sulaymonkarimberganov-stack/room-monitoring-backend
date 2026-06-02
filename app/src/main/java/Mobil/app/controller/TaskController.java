@@ -48,4 +48,21 @@ public class TaskController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/{id}/photo")
+    public ResponseEntity<Map<String, String>> uploadTaskPhoto(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        return taskRepository.findById(id)
+                .map(task -> {
+                    String photoUrl = body.get("photoUrl");
+                    if (photoUrl != null && !photoUrl.isEmpty()) {
+                        task.setPhotoUrl(photoUrl);
+                        taskRepository.save(task);
+                        return ResponseEntity.ok(Map.of("message", "Photo uploaded successfully", "photoUrl", photoUrl));
+                    }
+                    return ResponseEntity.badRequest().body(Map.of("error", "Photo URL is required"));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

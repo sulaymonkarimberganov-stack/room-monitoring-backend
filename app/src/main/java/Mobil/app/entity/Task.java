@@ -40,6 +40,8 @@ public class Task {
 
     private LocalDateTime createdAt;
     private LocalDateTime completedAt;
+    
+    private String photoUrl; // URL of the photo uploaded after cleaning
 
     @PrePersist
     protected void onCreate() {

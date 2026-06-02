@@ -28,6 +28,14 @@ public class Room {
     @Column(nullable = false)
     private RoomStatus status;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "floor_id")
+    private Floor floor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_staff_id")
+    private User assignedStaff;
+
     private LocalDateTime lastCleaned;
     private LocalDateTime updatedAt;
 

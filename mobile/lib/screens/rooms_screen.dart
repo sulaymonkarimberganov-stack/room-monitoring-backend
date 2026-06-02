@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
+import '../utils/room_formatter.dart';
 
 class RoomsScreen extends StatefulWidget {
   const RoomsScreen({super.key});
@@ -22,7 +24,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final rooms = await ApiService.getRooms();
+      final api = ApiService();
+      final rooms = await api.getRooms();
       setState(() => _rooms = rooms);
     } catch (_) {
       _snack('Xonalarni yuklashda xatolik', Colors.red);
@@ -35,43 +38,79 @@ class _RoomsScreenState extends State<RoomsScreen> {
       _filter == 'ALL' ? _rooms : _rooms.where((r) => r['status'] == _filter).toList();
 
   Color _color(String s) => switch (s) {
-        'CLEAN' => Colors.green,
-        'DIRTY' => Colors.red,
-        'IN_PROGRESS' => Colors.orange,
+        'CLEAN' => const Color(0xFF2E7D32),        // To'q yashil
+        'DIRTY' => const Color(0xFFC62828),        // To'q qizil
+        'OCCUPIED' => const Color(0xFFE65100),     // To'q to'q sariq
+        'CLEANING' => const Color(0xFFE65100),     // To'q to'q sariq
+        'MAINTENANCE' => const Color(0xFF9E9E9E),
         _ => Colors.grey,
       };
 
   IconData _icon(String s) => switch (s) {
-        'CLEAN' => Icons.check_circle,
-        'DIRTY' => Icons.cancel,
-        'IN_PROGRESS' => Icons.autorenew,
+        'CLEAN' => Icons.check_circle_rounded,
+        'DIRTY' => Icons.warning_rounded,
+        'OCCUPIED' => Icons.cleaning_services_rounded,
+        'MAINTENANCE' => Icons.build_rounded,
         _ => Icons.help,
       };
 
   String _label(String s) => switch (s) {
         'CLEAN' => 'Toza',
         'DIRTY' => 'Tozalanmagan',
-        'IN_PROGRESS' => 'Jarayonda',
+        'OCCUPIED' => 'Tozalanmoqda',
+        'MAINTENANCE' => 'Ta\'mirlash',
         _ => s,
       };
 
   void _snack(String msg, Color color) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   Future<void> _changeStatus(dynamic room) async {
     final selected = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Xona ${room['roomNumber']} — status'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          RoomFormatter.format(room['roomNumber']),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: ['CLEAN', 'DIRTY', 'IN_PROGRESS']
-              .map((s) => ListTile(
-                    leading: Icon(_icon(s), color: _color(s)),
-                    title: Text(_label(s)),
+          children: ['CLEAN', 'DIRTY', 'OCCUPIED', 'MAINTENANCE']
+              .map((s) => InkWell(
                     onTap: () => Navigator.pop(context, s),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _color(s).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _color(s).withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(_icon(s), color: _color(s), size: 24),
+                          const SizedBox(width: 12),
+                          Text(
+                            _label(s),
+                            style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ))
               .toList(),
         ),
@@ -79,8 +118,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
     if (selected != null) {
       try {
-        await ApiService.updateRoomStatus(room['id'], selected);
+        final api = ApiService();
+        await api.updateRoomStatus(room['id'], selected);
         _load();
+        _snack('Status yangilandi', Colors.green);
       } catch (_) {
         _snack('Statusni yangilashda xatolik', Colors.red);
       }
@@ -89,97 +130,207 @@ class _RoomsScreenState extends State<RoomsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final clean = _rooms.where((r) => r['status'] == 'CLEAN').length;
-    final dirty = _rooms.where((r) => r['status'] == 'DIRTY').length;
-    final inProgress = _rooms.where((r) => r['status'] == 'IN_PROGRESS').length;
-
-    return Column(
-      children: [
-        // Statistika
-        Container(
-          color: const Color(0xFF1565C0),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _stat('Jami', _rooms.length, Colors.white),
-              _stat('Toza', clean, Colors.green.shade200),
-              _stat('Iflos', dirty, Colors.red.shade200),
-              _stat('Jarayon', inProgress, Colors.orange.shade200),
-            ],
-          ),
-        ),
-        // Filter chips
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: ['ALL', 'CLEAN', 'DIRTY', 'IN_PROGRESS'].map((f) {
-              final sel = _filter == f;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  label: Text(f == 'ALL' ? 'Barchasi' : _label(f)),
-                  selected: sel,
-                  onSelected: (_) => setState(() => _filter = f),
-                  selectedColor: const Color(0xFF1565C0),
-                  labelStyle: TextStyle(
-                      color: sel ? Colors.white : Colors.black87),
+    return Container(
+      color: Colors.grey.shade50,
+      child: Column(
+        children: [
+          // Header with title
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
-              );
-            }).toList(),
-          ),
-        ),
-        // Ro'yxat
-        Expanded(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _filtered.isEmpty
-                      ? const Center(child: Text('Xonalar topilmadi'))
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _filtered.length,
-                          itemBuilder: (_, i) {
-                            final room = _filtered[i];
-                            final status = room['status'] as String;
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor:
-                                      _color(status).withValues(alpha: 0.15),
-                                  child: Icon(_icon(status),
-                                      color: _color(status)),
-                                ),
-                                title: Text('Xona ${room['roomNumber']}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
-                                subtitle: Text(
-                                    '${room['floor'] ?? ''} qavat • ${_label(status)}'),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.edit,
-                                      color: Color(0xFF1565C0)),
-                                  onPressed: () => _changeStatus(room),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Xona holati',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                  ),
                 ),
-        ),
-      ],
+                const SizedBox(height: 16),
+                // Filter tabs
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterTab('ALL', 'Barchasi', Icons.grid_view_rounded),
+                      _buildFilterTab('CLEAN', 'Toza', Icons.check_circle_rounded),
+                      _buildFilterTab('OCCUPIED', 'Tozalanmoqda', Icons.cleaning_services_rounded),
+                      _buildFilterTab('DIRTY', 'Tozalanmagan', Icons.warning_rounded),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Rooms List
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: _filtered.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.inbox_rounded, size: 80, color: Colors.grey.shade300),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Xonalar topilmadi',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _filtered.length,
+                            itemBuilder: (_, i) {
+                              final room = _filtered[i];
+                              final status = room['status'] as String;
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.08),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  leading: Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      color: _color(status).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(_icon(status), color: _color(status), size: 26),
+                                  ),
+                                  title: Text(
+                                    RoomFormatter.format(room['roomNumber']),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade800,
+                                    ),
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: _color(status).withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            _label(status),
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: _color(status),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${room['type'] ?? 'Standard'}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  trailing: IconButton(
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1565C0).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.edit_rounded,
+                                        color: Color(0xFF1565C0),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    onPressed: () => _changeStatus(room),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _stat(String label, int count, Color color) => Column(
-        children: [
-          Text('$count',
-              style: TextStyle(
-                  color: color, fontSize: 22, fontWeight: FontWeight.bold)),
-          Text(label,
-              style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        ],
-      );
+  Widget _buildFilterTab(String value, String label, IconData icon) {
+    final isSelected = _filter == value;
+    return GestureDetector(
+      onTap: () => setState(() => _filter = value),
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF1565C0) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF1565C0).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.white : Colors.grey.shade700,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

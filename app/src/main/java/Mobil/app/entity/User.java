@@ -30,6 +30,16 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Column(nullable = false)
+    private Integer cleaningCoins = 0; // Gamification: coins earned
+
+    @Column(nullable = false)
+    private Integer tasksCompleted = 0; // Total tasks completed
+
+    private String avatar; // Avatar initials (e.g., "AK")
+    
+    private String avatarColor; // Hex color for avatar (e.g., "#1565C0")
+
     private LocalDateTime createdAt;
 
     @PrePersist

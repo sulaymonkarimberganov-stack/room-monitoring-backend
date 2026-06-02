@@ -5,6 +5,8 @@
 - **Texnologiyalar:** Spring Boot 3.2.4 + Flutter 3.41.7 + PostgreSQL
 - **Deployment:** Railway (Backend) + APK (Mobile)
 - **Maqsad:** Diplom ishi loyihasi
+- **Oxirgi Yangilanish:** 2026-04-28
+- **Status:** ✅ TAYYOR - Diplom himoyasi uchun
 
 ---
 
@@ -102,11 +104,19 @@ mobile/build/app/outputs/flutter-apk/app-release.apk (47.5 MB)
    - API documentation
    - Database schema
 
-4. ⏳ **Design Document** (`.kiro/specs/smart-building-management-system/design.md`)
-   - Status: Boshlangan, to'liq emas
+4. ✅ **Design Document** (`.kiro/specs/smart-building-management-system/design.md`)
+   - Status: ✅ TO'LIQ (2026-04-28 da yaratildi)
+   - 14 bo'lim, 6000+ qator
+   - System Architecture, Database Schema (11 tables), API Endpoints (60+)
+   - Mobile App Design, Service Layer, Real-Time Updates, Security, etc.
 
 5. ⏳ **Tasks Document** (`.kiro/specs/smart-building-management-system/tasks.md`)
-   - Status: Boshlangan, to'liq emas
+   - Status: Hali yaratilmadi (texnik muammo)
+
+6. ✅ **FINAL_PROJECT_REPORT.md** (root directory)
+   - Status: ✅ TAYYOR (2026-04-28 da yaratildi)
+   - To'liq loyiha hisoboti
+   - Barcha ma'lumotlar, statistika, achievements
 
 ---
 
@@ -285,6 +295,7 @@ Agar qo'shimcha yordam kerak bo'lsa:
 
 ---
 
-**Sana:** 2026-04-27
-**Status:** ✅ Asosiy funksiyalar tayyor, diplom hujjatlari boshlangan
-**Keyingi:** Design Document va Taqdimot
+**Sana:** 2026-04-28  
+**Status:** ✅ Asosiy funksiyalar tayyor, hujjatlar to'liq  
+**Keyingi:** Diplom himoyasi  
+**Yakuniy Hisobot:** FINAL_PROJECT_REPORT.md

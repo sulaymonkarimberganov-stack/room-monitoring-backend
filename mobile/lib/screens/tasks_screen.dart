@@ -24,9 +24,10 @@ class _TasksScreenState extends State<TasksScreen> {
     setState(() => _loading = true);
     try {
       final auth = context.read<AuthProvider>();
+      final api = ApiService();
       final tasks = auth.isManager
-          ? await ApiService.getAllTasks()
-          : await ApiService.getMyTasks();
+          ? await api.getAllTasks()
+          : await api.getMyTasks();
       setState(() => _tasks = tasks);
     } catch (_) {
       _snack('Vazifalarni yuklashda xatolik', Colors.red);
@@ -77,7 +78,8 @@ class _TasksScreenState extends State<TasksScreen> {
     );
     if (selected != null) {
       try {
-        await ApiService.updateTaskStatus(task['id'], selected);
+        final api = ApiService();
+        await api.updateTaskStatus(task['id'], selected);
         _load();
       } catch (_) {
         _snack('Statusni yangilashda xatolik', Colors.red);
