@@ -4,9 +4,8 @@ import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Render.com backend URL (Railway o'rniga)
-  // TODO: Render deploy bo'lgandan keyin bu URL ni yangilang
-  static const String baseUrl = 'https://YOUR-RENDER-URL.onrender.com/api';
+  // Railway backend URL
+  static const String baseUrl = 'https://room-monitoring-backend-production-d096.up.railway.app/api';
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();

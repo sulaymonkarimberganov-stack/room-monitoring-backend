@@ -1,7 +1,7 @@
 FROM eclipse-temurin:21-jdk AS build
-WORKDIR /workspace
+WORKDIR /app
 
-# Copy app directory contents
+# Copy Maven files
 COPY app/.mvn/ .mvn/
 COPY app/mvnw app/pom.xml ./
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
@@ -12,7 +12,7 @@ RUN ./mvnw package -DskipTests -B
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /workspace/target/*.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
 
 # Expose port
 EXPOSE 8080
