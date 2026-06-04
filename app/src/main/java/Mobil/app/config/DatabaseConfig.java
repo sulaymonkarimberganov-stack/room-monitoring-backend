@@ -7,59 +7,43 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 import javax.sql.DataSource;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 @Configuration
 public class DatabaseConfig {
 
     @Bean
     @Primary
-    public DataSource dataSource() throws URISyntaxException {
-        String dbUrl = System.getenv("DATABASE_URL");
-
+    public DataSource dataSource() {
         HikariConfig config = new HikariConfig();
         config.setMaximumPoolSize(5);
         config.setConnectionTimeout(30000);
+        config.setDriverClassName("org.postgresql.Driver");
 
-        if (dbUrl != null && !dbUrl.isEmpty() &&
-                (dbUrl.startsWith("postgresql://") || dbUrl.startsWith("postgres://"))) {
+        // 1. PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD (Railway standard vars)
+        String pgHost = System.getenv("PGHOST");
+        String pgPort = System.getenv("PGPORT");
+        String pgDb   = System.getenv("PGDATABASE");
+        String pgUser = System.getenv("PGUSER");
+        String pgPass = System.getenv("PGPASSWORD");
 
-            // Parse Railway DATABASE_URL: postgresql://user:pass@host:port/db
-            URI uri = new URI(dbUrl.replace("postgres://", "postgresql://"));
-
-            String host = uri.getHost();
-            int port = uri.getPort() == -1 ? 5432 : uri.getPort();
-            String db = uri.getPath().replaceFirst("/", "");
-            String[] userInfo = uri.getUserInfo().split(":", 2);
-            String user = userInfo[0];
-            String pass = userInfo.length > 1 ? userInfo[1] : "";
-
-            String jdbcUrl = String.format(
-                "jdbc:postgresql://%s:%d/%s?sslmode=require", host, port, db);
+        if (pgHost != null && pgUser != null && pgPass != null) {
+            String port = (pgPort != null) ? pgPort : "5432";
+            String db   = (pgDb != null)   ? pgDb   : "railway";
+            String jdbcUrl = "jdbc:postgresql://" + pgHost + ":" + port + "/" + db + "?sslmode=require";
 
             config.setJdbcUrl(jdbcUrl);
-            config.setUsername(user);
-            config.setPassword(pass);
-            config.setDriverClassName("org.postgresql.Driver");
+            config.setUsername(pgUser);
+            config.setPassword(pgPass);
 
-            System.out.println("✅ DB connected: " + host + ":" + port + "/" + db + " user=" + user);
-
-        } else if (dbUrl != null && dbUrl.startsWith("jdbc:")) {
-            // Already JDBC format
-            config.setJdbcUrl(dbUrl);
-            config.setDriverClassName("org.postgresql.Driver");
-            System.out.println("✅ DB connected (JDBC format)");
-
-        } else {
-            // Local fallback
-            config.setJdbcUrl("jdbc:postgresql://localhost:5432/railway");
-            config.setUsername("postgres");
-            config.setPassword("");
-            config.setDriverClassName("org.postgresql.Driver");
-            System.out.println("⚠️ Using localhost DB (DATABASE_URL not set)");
+            System.out.println("✅ DB via PG vars: " + pgHost + ":" + port + "/" + db + " user=" + pgUser);
+            return new HikariDataSource(config);
         }
 
+        // 2. Fallback - localhost
+        System.out.println("⚠️ PG vars not found, using localhost");
+        config.setJdbcUrl("jdbc:postgresql://localhost:5432/railway");
+        config.setUsername("postgres");
+        config.setPassword("");
         return new HikariDataSource(config);
     }
 }
